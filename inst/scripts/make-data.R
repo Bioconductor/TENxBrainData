@@ -16,7 +16,7 @@ tenxmat <- TENxMatrix(path)
 
 library(HDF5Array)
 options(DelayedArray.block.size=1e9) # 1GB block size.
-mat.out <- writeHDF5Array(tenxmat, file="10x_brain.h5", name="brain", chunk_dim=c(100, 100))
+mat.out <- writeHDF5Array(tenxmat, file="10x_brain.h5", name="counts", chunk_dim=c(100, 100))
 
 # Constructing a new SingleCellExperiment object for serialization.
 

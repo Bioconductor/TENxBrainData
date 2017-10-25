@@ -1,4 +1,4 @@
-import(ExperimentHub)
+import(ExperimentHub, SingleCellExperiment)
 importFrom(utils, read.csv)
 importFrom(AnnotationHub, query)
 
