@@ -1,4 +1,6 @@
-import(ExperimentHub, SingleCellExperiment)
-importFrom(utils, read.csv)
+importFrom(ExperimentHub, ExperimentHub)
 importFrom(AnnotationHub, query)
+importFrom(HDF5Array, HDF5Array)
+import(SingleCellExperiment, SingleCellExperiment)
 
+export(TENxBrainData)
