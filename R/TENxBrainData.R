@@ -17,7 +17,6 @@ TENxBrainData <- function()
     ## HDF5, from ExperimentHub:
     rdatapath <- paste0("TENxBrainData/", base, "_rectangular.h5")
     h5file <- query(ExperimentHub(), rdatapath)[[1]]
-    h5file <- "~/a/1M_neurons_filtered_gene_bc_matrices_h5_rectangular.h5"
     h5array <- HDF5Array(h5file, "counts")
 
     SingleCellExperiment(
