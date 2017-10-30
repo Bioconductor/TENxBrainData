@@ -4,23 +4,24 @@
 main.data <- data.frame(
     Title = c(
         "Brain scRNA-seq data, 'RLE-compressed'",
-        "Brain scRNA-seq data, 'rectangular'"
+        "Brain scRNA-seq data, 'rectangular'",
+        "Brain scRNA-seq data, sample (column) annotation",
+        "Brain scRNA-seq data, gene (row) annotation"
     ),
-    Description = c(
-        paste(
-            "Single-cell RNA-seq data for 1.3 million brain cells from E18 mice.",
+    Description = paste(
+        "Single-cell RNA-seq data for 1.3 million brain cells from E18 mice.",
+        c(
             "'RLE-compressed' format originally provided by TENx Genomics",
-            collapse = " "
-        ),
-        paste(
-            "Single-cell RNA-seq data for 1.3 million brain cells from E18 mice.",
             "Full rectangular, block-compressed format, 1GB block size.",
-            collapse = " "
+            "Inferred sample descriptions.",
+            "Gene descriptions."
         )
     ),
     RDataPath = c(
         "TENxBrainData/1M_neurons_filtered_gene_bc_matrices_h5.h5",
-        "TENxBrainData/1M_neurons_filtered_gene_bc_matrices_h5_rectangular.h5"
+        "TENxBrainData/1M_neurons_filtered_gene_bc_matrices_h5_rectangular.h5",
+        "TENxBrainData/1M_neurons_filtered_gene_bc_matrices_h5_colData.rds",
+        "TENxBrainData/1M_neurons_filtered_gene_bc_matrices_h5_rowData.rds"
     ),
     BiocVersion="3.7",
     Genome="mm10",
@@ -33,7 +34,7 @@ main.data <- data.frame(
     DataProvider="10X Genomics",
     Maintainer="Aaron Lun <alun@wehi.edu.au>",
     RDataClass="character",
-    DispatchClass="H5File",
+    DispatchClass=c("H5File", "H5File", "Rds", "Rds"),
     stringsAsFactors = FALSE
 )
 
