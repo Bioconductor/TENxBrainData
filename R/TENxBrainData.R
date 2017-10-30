@@ -6,13 +6,11 @@ TENxBrainData <- function()
     base <- "1M_neurons_filtered_gene_bc_matrices_h5"
 
     ## row and column data
-    path <- system.file(package = "TENxBrainData", "extdata")
+    rdatapath <- paste0("TENxBrainData/", base, "_rowData.rds")
+    rowData <- query(ExperimentHub(), rdatapath)[[1]]
 
-    fname <- file.path(path, paste0(base, "_rowData.rds"))
-    rowData <- readRDS(fname)
-
-    fname <- file.path(path, paste0(base, "_colData.rds"))
-    colData <- readRDS(fname)
+    rdatapath <- paste0("TENxBrainData/", base, "_colData.rds")
+    colData <- query(ExperimentHub(), rdatapath)[[1]]
 
     ## HDF5, from ExperimentHub:
     rdatapath <- paste0("TENxBrainData/", base, "_rectangular.h5")

@@ -14,11 +14,13 @@ library(TENxGenomics)
 tenx.se <- tenxSummarizedExperiment(path)
 
 saveRDS(
-    rowData(tenx.se), "1m_neurons_filtered_gene_bc_matrices_h5_rowData.rds"
+    as.data.frame(rowData(tenx.se)),
+    "1M_neurons_filtered_gene_bc_matrices_h5_rowData.rds"
 )
 
 saveRDS(
-    colData(tenx.se), "1m_neurons_filtered_gene_bc_matrices_h5_colData.rds"
+    as.data.frame(colData(tenx.se)),
+    "1M_neurons_filtered_gene_bc_matrices_h5_colData.rds"
 )
 
 # Converting into a `HDF5Matrix` object
