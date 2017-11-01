@@ -45,7 +45,7 @@ TENxBrainData() # cheap
 ```
 
 The count matrix itself is represented as a `DelayedMatrix` from the `r Biocpkg("DelayedArray")` package.
-This wraps the underlyikng HDF5 file in a container that can be manipulated in R. 
+This wraps the underlying HDF5 file in a container that can be manipulated in R. 
 Each count represents the number of unique molecular identifiers (UMIs) assigned to a particular gene in a particular cell.
 
 ```{r}
@@ -55,11 +55,17 @@ counts(tenx)
 # Exploring the data
 
 To quickly explore the data set, we compute some summary statistics on the count matrix.
-For example, the library sizes can be easily obtained for each cell by taking the column sums of the matrix.
+We increase the `r Biocpkg("DelayedArray")` block size to indicate that we can use up to 2 GB of memory for loading the data into memory from disk.
+
+```{r}
+options(DelayedArray.block.size=2e9)
+```
+
+We obtain the library sizes for each cell by taking the column sums of the matrix.
 
 ```{r}
 lib.sizes <- colSums(counts(tenx))
-hist(log10(lib.sizes), xlab=expression(Log[10]~"Library size", col="grey80")
+hist(log10(lib.sizes), xlab=expression(Log[10]~"Library size"), col="grey80")
 ```
 
 We also compute the number of genes expressed in each cell (i.e., with non-zero counts).
@@ -80,10 +86,10 @@ We also examine the top most highly-expressing genes in this data set.
 
 ```{r}
 o <- order(ave.exprs, decreasing=TRUE)
-data.frame(Gene=rownames(tenx)[o[1:10]], Average=ave.exprs[o])
+head(data.frame(Gene=rowData(tenx)$Symbol, Average=ave.exprs)[o,])
 ```
 
-More advanced procedures are implemented in various Bioconductor packagescan be applied by appropriate
+More advanced analysis procedures are implemented in various Bioconductor packages - see the `SingleCell` biocViews for more details.
 
 # Session information
 
