@@ -1,5 +1,5 @@
 ---
-title: "Authoring R Markdown vignettes"
+title: "Exploring the 1.3 million brain cell scRNA-seq data from 10X Genomics"
 author:
 - name: Aaron Lun
   affiliation: Cancer Research UK Cambridge Institute, Cambridge, UK
