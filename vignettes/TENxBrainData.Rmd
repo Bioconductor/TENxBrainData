@@ -24,11 +24,11 @@ BiocStyle::markdown()
 ```
 
 # Exploring the 1.3 million brain cell scRNA-seq data from 10X Genomics
-Package: `r Biocpkg("TENxBrainData")` <br />
-Author: Aaron Lun (alun@wehi.edu.au) <br />
-Compilation date: `r Sys.Date()`
 
-# Introduction
+Package: `r Biocpkg("TENxBrainData")` <br />
+Author: Aaron Lun (alun@wehi.edu.au), Martin Morgan <br />
+Modification date: 30 December, 2017 <br />
+Compilation date: `r Sys.Date()`
 
 The `r Biocpkg("TENxBrainData")` package provides a _R_ /
 _Bioconductor_ resource for representing and manipulating the 1.3
@@ -38,16 +38,17 @@ Biocpkg("HDF5Array")` package to avoid loading the entire data set in
 memory, instead storing the counts on disk as a HDF5 file and loading
 subsets of the data into memory upon request.
 
-# Loading in the data
+# Initial work flow
+
+## Loading the data
 
 We use the `TENxBrainData` function to download the relevant files
-from Bioconductor's ExperimentHub web resource.  This includes the
+from _Bioconductor_'s ExperimentHub web resource.  This includes the
 HDF5 file containing the counts, as well as the metadata on the rows
 (genes) and columns (cells).  The output is a single
-`SingleCellExperiment` object from the `r
-Biocpkg("SingleCellExperiment")` package.  This is equivalent to a
-`SummarizedExperiment` class but with a number of features specific to
-single-cell data.
+`SingleCellExperiment` object from the `r Biocpkg("SingleCellExperiment")` 
+package.  This is equivalent to a `SummarizedExperiment` class but
+with a number of features specific to single-cell data.
 
 
 ```{r}
@@ -56,14 +57,10 @@ tenx <- TENxBrainData()
 tenx
 ```
 
-The first call to this function will take some time due to the need to
-download some moderately large files.  The files are then stored
-locally such that ensuing calls in the same or new sessions are very
+The first call to `TENxBrainData()` will take some time due to the
+need to download some moderately large files.  The files are then
+stored locally such that ensuing calls in the same or new sessions are
 fast.
-
-```{r}
-TENxBrainData() # cheap
-```
 
 The count matrix itself is represented as a `DelayedMatrix` from the
 `r Biocpkg("DelayedArray")` package.  This wraps the underlying HDF5
@@ -75,7 +72,7 @@ to a particular gene in a particular cell.
 counts(tenx)
 ```
 
-# Exploring the data
+## Exploring the data
 
 To quickly explore the data set, we compute some summary statistics on
 the count matrix.  We increase the `r Biocpkg("DelayedArray")` block
@@ -187,10 +184,12 @@ More advanced analysis procedures are implemented in various
 _Bioconductor_ packages - see the `SingleCell` biocViews for more
 details.
 
+## Saving computed data
+
 Here we save the _SingleCellExperiment_ object, for later use. The
 object is saved using the base _R_ function `saveRDS()`; the large
 data are _not_ duplicated, but the saved object is only valid as long
-as the original path
+as the original path remains unchanged.
 
 ```{r}
 if (!cached) {
@@ -199,6 +198,170 @@ if (!cached) {
 }
 ```
 
+# Improving computational performance
+
+## Parallel computation
+
+Row and column summary statistics can be computed in parallel, for
+instance using `bpiterate()` in the [BiocParallel][] package. We load
+the package and start 5 'snow' workers (separate processes).
+
+```{r}
+library(BiocParallel)
+register(bpstart(SnowParam(5)))
+```
+
+This function requires an `iterator` to generate chunks of
+data. Our iterator returns a function that itself returns the start
+and end column indexes of each chunk, until there are no more chunks.
+
+```{r}
+iterator <- function(tenx, cols_per_chunk = 5000, n = Inf) {
+    start <- seq(1, ncol(tenx), by = cols_per_chunk)
+    end <- c(tail(start, -1) - 1L, ncol(tenx))
+    n <- min(n, length(start))
+    i <- 0L
+    function() {
+        if (i == n)
+            return(NULL)
+        i <<- i + 1L
+        c(start[i], end[i])
+    }
+}
+```
+
+Here is the iterator in action
+
+```{r}
+iter <- iterator(tenx)
+iter()
+iter()
+iter()
+```
+
+`bpiterate()` requires a function that acts on each data chunk. It
+receives the output of the iterator, as well as any other arguments it
+may require, and returns the summary statistics for that chunk
+
+```{r}
+fun <- function(crng, counts, ...) {
+    ## `fun()` needs to be self-contained for some parallel back-ends
+    suppressPackageStartupMessages({
+        library(TENxBrainData)
+    })
+    m <- as.matrix( counts[ , seq(crng[1], crng[2]) ] )
+    list(
+        row = list(
+            n = rowSums(m != 0), sum = rowSums(m), sumsq = rowSums(m * m)
+        ),
+        column = list(
+            n = colSums(m != 0), sum = colSums(m), sumsq = colSums(m * m)
+        )
+    )
+}
+```
+
+We can test this function as
+
+```{r}
+res <- fun( iter(), unname(counts(tenx)) )
+str(res)
+```
+    
+Finally, `bpiterate()` requires a function to reduce succesive values
+returned by `fun()`
+
+```{r}
+reduce <- function(x, y) {
+    list(
+        row = Map(`+`, x$row, y$row),
+        column = Map(`c`, x$column, y$column)
+    )
+}
+```
+
+A test is
+
+```{r}
+str( reduce(res, res) )
+```
+
+Putting the pieces together and evaluating the first 25000 columns, we have
+
+```{r}
+res <- bpiterate(
+    iterator(tenx, n = 5), fun, counts = unname(counts(tenx)), 
+    REDUCE = reduce, reduce.in.order = TRUE
+)
+str(res)
+```
+
+## Working with Rle-compressed HDF5 data
+
+The 10x Genomics data is also distributed in a compressed format,
+available from ExperimentHub
+
+```{r}
+library(ExperimentHub)
+hub <- ExperimentHub()
+query(hub, "TENxBrainData")
+fname <- hub[["EH1039"]]
+```
+
+The structure of the file can be seen using the `h5ls()` command from
+[rhdf5][].
+
+```{r}
+h5ls(fname)
+```
+
+Non-zero counts are in the `/mm10/data` path. `/mm10/indices`
+represent the row indices corresponding to each non-zero
+count. `/mm10/indptr` divides the data and indices into successive
+columns. For instance
+
+```{r}
+start <- h5read(fname, "/mm10/indptr", start=1, count=25001)
+head(start)
+```
+
+retrieves the offsets into `/mm10/data` of the first 25001 columns of
+data. The offsets are 0-based because HDF5 use 0-based indexing; we
+will sometimes need to add 1 to facilitate use in _R_.
+
+Here we read the first 25000 columns of data into _R_, using
+[data.table][] for efficient computation on this large data.
+
+```{r}
+library(data.table)
+dt <- data.table(
+    row = h5read(fname, "/mm10/indices", start = 1, count = tail(start, 1)) + 1,
+    column = rep(seq_len(length(start) - 1), diff(start)),
+    count = h5read(fname, "/mm10/data", start = 1, count = tail(start, 1))
+)
+dt
+```
+
+Row and column summaries are then
+
+```{r}
+dt[ , 
+    list(n = .N, sum = sum(count), sumsq = sum(count * count)),
+    keyby=row]
+dt[ , 
+    list(n = .N, sum = sum(count), sumsq = sum(count * count)),
+    keyby=column]
+```
+
+Iterating through 25000 columns of dense data took about 3 minutes of
+computational time (about 30 seconds elapsed time using 6 cores),
+compared to just a few seconds for sparse data. Processing the entire
+sparse data set would still require chunk-wise processing except on
+large-memory machines, and would benefit from parallel computation. In
+the later case, processing fewer than 25000 columns per chunk would
+reduce memory consumption of each chunk and hence allow more
+processing cores to operate, increasing overall processing speed.
+
 # Session information
 
 ```{r}
@@ -206,3 +369,6 @@ sessionInfo()
 ```
 
 [tenx]: https://support.10xgenomics.com/single-cell-gene-expression/datasets/1.3.0/1M_neurons
+[BiocParallel]: https://bioconductor.org/packages/BiocParallel
+[rhdf5]: https://bioconductor.org/packages/rhdf5
+[data.table]: https://cran.r-project.org/?package=data.table

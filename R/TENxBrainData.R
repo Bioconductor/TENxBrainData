@@ -1,7 +1,7 @@
 TENxBrainData <- function() 
-# Downloads the RDS object and the HDF5 file from AWS,
-# and modifies the path of the HDF5 object to use the 
-# system location of the installation.
+    ## Download HDF5 (dense assay) and RDS (row and column
+    ## annotations) files from ExperimentHub, compose into a
+    ## SingleCellExperiment.
 {
     hub <- ExperimentHub()
     base <- "1M_neurons_filtered_gene_bc_matrices_h5"
