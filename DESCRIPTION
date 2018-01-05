@@ -1,6 +1,6 @@
 Package: TENxBrainData
 Title: Data from the 10X 1.3 Million Brain Cell Study
-Version: 0.99.6
+Version: 0.99.7
 Authors@R: c(
     person("Aaron", "Lun", role = "aut", email = "alun@wehi.edu.au"),
     person("Martin", "Morgan", role = "aut"),

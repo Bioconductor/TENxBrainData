@@ -97,53 +97,38 @@ ave.exprs <- rowMeans(counts(tenx))
 However, the data is read from disk, disk access is comparatively
 slow, and the naive implementation reads the data three
 times. Instead, we'll divide the data into column 'chunks' of about
-10,000 cells
+10,000 cells; we do this on a subset of data to reduce computation
+time during the exploratory phase.
 
 ```{r}
-chunksize <- 10000
-cidx <- snow::splitIndices(ncol(tenx), ncol(tenx) / chunksize)
+tenx20k <- tenx[, seq_len(20000)]
+chunksize <- 5000
+cidx <- snow::splitIndices(ncol(tenx20k), ncol(tenx20k) / chunksize)
 ```
 
 and iterate through the file reading the data and accumulating
-statistics on each iteration. Since the operation is expensive, we
-check first to see whether a cached (saved) version exists.
+statistics on each iteration.
 
 ```{r}
-library(BiocFileCache)
-cached <- nrow(bfcquery(query="TENxBrainData/SCE")) == 1L
-if (cached) {
-    path <- bfcrpath(rnames="TENxBrainData/SCE")
-    tenx <- readRDS(path)
-}
-```
-
-If there is no cached version, we generate the object (this takes a
-long time, e.g., 30 minutes).
-
-```{r}
-if (!cached) {
-    lib.sizes <- n.exprs <- numeric(ncol(tenx))
-    tot.exprs <- numeric(nrow(tenx))
-    for (i in cidx) {
-        message(".", appendLF=FALSE)
-        m <- as.matrix(counts(tenx)[,i, drop=FALSE])
-        lib.sizes[i] <- colSums(m)
-        n.exprs[i] <- colSums(m != 0)
-        tot.exprs <- tot.exprs + rowSums(m)
-        }
-    ave.exprs <- tot.exprs / ncol(tenx)
-}
+lib.sizes <- n.exprs <- numeric(ncol(tenx20k))
+tot.exprs <- numeric(nrow(tenx20k))
+for (i in head(cidx, 2)) {
+    message(".", appendLF=FALSE)
+    m <- as.matrix(counts(tenx20k)[,i, drop=FALSE])
+    lib.sizes[i] <- colSums(m)
+    n.exprs[i] <- colSums(m != 0)
+    tot.exprs <- tot.exprs + rowSums(m)
+    }
+ave.exprs <- tot.exprs / ncol(tenx20k)
 ```
 
 Since the calculations are expensive and might be useful in the
-future, we annotate the `tenx` object
+future, we annotate the `tenx20k` object
 
 ```{r}
-if (!cached) {
-    colData(tenx)$lib.sizes <- lib.sizes
-    colData(tenx)$n.exprs <- n.exprs
-    rowData(tenx)$ave.exprs <- ave.exprs
-}
+colData(tenx20k)$lib.sizes <- lib.sizes
+colData(tenx20k)$n.exprs <- n.exprs
+rowData(tenx20k)$ave.exprs <- ave.exprs
 ```
 
 Library sizes follow an approximately log normal distribution, and are
@@ -151,7 +136,7 @@ surprisingly small.
 
 ```{r}
 hist(
-    log10(colData(tenx)$lib.sizes),
+    log10(colData(tenx20k)$lib.sizes),
     xlab=expression(Log[10] ~ "Library size"),
     col="grey80"
 )
@@ -160,14 +145,14 @@ hist(
 Expression of only a few thousand genes are detected in each sample.
 
 ```{r}
-hist(colData(tenx)$n.exprs, xlab="Number of detected genes", col="grey80")
+hist(colData(tenx20k)$n.exprs, xlab="Number of detected genes", col="grey80")
 ```
 
 Average expression values (read counts) are small.
 
 ```{r}
 hist(
-    log10(rowData(tenx)$ave.exprs),
+    log10(rowData(tenx20k)$ave.exprs),
     xlab=expression(Log[10] ~ "Average count"),
     col="grey80"
 )
@@ -176,27 +161,28 @@ hist(
 We also examine the top most highly-expressing genes in this data set.
 
 ```{r}
-o <- order(rowData(tenx)$ave.exprs, decreasing=TRUE)
-head(rowData(tenx)[o,])
+o <- order(rowData(tenx20k)$ave.exprs, decreasing=TRUE)
+head(rowData(tenx20k)[o,])
 ```
 
 More advanced analysis procedures are implemented in various
 _Bioconductor_ packages - see the `SingleCell` biocViews for more
 details.
 
-## Saving computed data
+## Saving computations
 
-Here we save the _SingleCellExperiment_ object, for later use. The
-object is saved using the base _R_ function `saveRDS()`; the large
-data are _not_ duplicated, but the saved object is only valid as long
-as the original path remains unchanged.
+Saving the `tenx` object in a standard manner, e.g.,
 
-```{r}
-if (!cached) {
-    path <- bfcnew(rname = "TENxBrainData/SCE", ext="rds")
-    saveRDS(tenx, path)
-}
+```{r, eval=FALSE}
+destination <- tempfile()
+saveRDS(tenx, file = destination)
 ```
+
+saves the row-, column-, and meta-data as an _R_ object, and remembers
+the location and subset of the HDF5 file from which the object is
+derived. The object can be read into a new _R_ session with
+`readRDS(destination)`, provided the HDF5 file remains in it's
+original location.
 
 # Improving computational performance
 
