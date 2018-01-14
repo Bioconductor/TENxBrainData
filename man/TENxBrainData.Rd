@@ -38,8 +38,9 @@ Aaron Lun
 }
 
 \examples{
-\dontrun{
 sce <- TENxBrainData()
 sce
-}
+sce[, 10000 + seq_len(10000)]
+lib.size.10k <- colSums(assay(sce)[,seq_leng(10000)])
+hist(log10(lib.size.10k))
 }

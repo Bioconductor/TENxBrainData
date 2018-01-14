@@ -1,6 +1,6 @@
 Package: TENxBrainData
 Title: Data from the 10X 1.3 Million Brain Cell Study
-Version: 0.99.7
+Version: 0.99.8
 Authors@R: c(
     person("Aaron", "Lun", role = "aut", email = "alun@wehi.edu.au"),
     person("Martin", "Morgan", role = "aut"),
@@ -16,5 +16,5 @@ Depends: SingleCellExperiment, HDF5Array
 Imports: AnnotationHub (>= 2.9.22), ExperimentHub
 Suggests: knitr, BiocStyle, snow, BiocFileCache, BiocParallel, data.table
 VignetteBuilder: knitr
-biocViews: SequencingData, RNASeqData, ExpressionData, SingleCell
+biocViews: SequencingData, RNASeqData, ExpressionData, SingleCellData
 NeedsCompilation: no
