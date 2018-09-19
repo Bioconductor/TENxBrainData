@@ -2,7 +2,7 @@
 #' @importFrom HDF5Array HDF5Array
 #' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom ExperimentHub ExperimentHub
-.create_SCE_from_base <- function(base) 
+.create_SCE_from_base <- function(base)
 ## Download HDF5 (dense assay) and RDS (row and column
 ## annotations) files from ExperimentHub, compose into a
 ## SingleCellExperiment.
@@ -37,4 +37,3 @@ TENxBrainData <- function() {
 TENxBrainData20k <- function() {
     .create_SCE_from_base("1M_neurons_neuron20k")
 }
-

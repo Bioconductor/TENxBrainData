@@ -40,7 +40,7 @@ options(DelayedArray.block.size=1e9) # 1GB block size.
 mat.out <- writeHDF5Array(
     tenxmat,
     file="1M_neurons_filtered_gene_bc_matrices_h5_rectangular.h5",
-    name="counts", 
+    name="counts",
     chunkdim=beachmat::getBestChunkDims(dim(tenxmat))
 )
 
@@ -63,6 +63,6 @@ options(DelayedArray.block.size=1e9) # 1GB block size.
 mat.out <- writeHDF5Array(
     tenxmat,
     file="1M_neurons_neuron20k_rectangular.h5",
-    name="counts", 
+    name="counts",
     chunkdim=beachmat::getBestChunkDims(dim(tenxmat))
 )

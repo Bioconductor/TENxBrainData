@@ -7,17 +7,17 @@ main.data <- data.frame(
             c(
                 "Brain scRNA-seq data",
                 "Brain scRNA-seq data 20k subset"
-            ), 
+            ),
             each=4
         ),
         ", ",
         rep(
-            c( 
-                "'RLE-compressed'",
-                "'rectangular'",
+            c(
+                "'HDF5-based 10x Genomics' format",
+                "'dense matrix' format",
                 "sample (column) annotation",
                 "gene (row) annotation"
-            ), 
+            ),
             times=2
         )
     ),
@@ -26,20 +26,20 @@ main.data <- data.frame(
             c(
                 "Single-cell RNA-seq data for 1.3 million brain cells from E18 mice.",
                 "Single-cell RNA-seq data for subset of 20,000 brain cells from E18 mice."
-            ), 
+            ),
             each=4
         ),
         rep(
             c(
-                "'RLE-compressed' format originally provided by TENx Genomics.",
+                "'HDF5-based 10x Genomics' format originally provided by TENx Genomics.",
                 "Full rectangular, block-compressed format, 1GB block size.",
                 "Inferred sample descriptions.",
                 "Gene descriptions."
-            ), 
+            ),
             times=2
         )
     ),
-    RDataPath = file.path("TENxBrainData",         
+    RDataPath = file.path("TENxBrainData",
         paste0(
             rep(
                 c(
@@ -73,4 +73,3 @@ main.data <- data.frame(
 )
 
 write.csv(file="metadata.csv", main.data, row.names=FALSE)
-
