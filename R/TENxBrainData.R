@@ -1,10 +1,13 @@
-TENxBrainData <- function() 
-    ## Download HDF5 (dense assay) and RDS (row and column
-    ## annotations) files from ExperimentHub, compose into a
-    ## SingleCellExperiment.
+#' @importFrom AnnotationHub query
+#' @importFrom HDF5Array HDF5Array
+#' @importFrom SingleCellExperiment SingleCellExperiment
+#' @importFrom ExperimentHub ExperimentHub
+.create_SCE_from_base <- function(base)
+## Download HDF5 (dense assay) and RDS (row and column
+## annotations) files from ExperimentHub, compose into a
+## SingleCellExperiment.
 {
     hub <- ExperimentHub()
-    base <- "1M_neurons_filtered_gene_bc_matrices_h5"
 
     ## row and column data
     rdatapath <- paste0("TENxBrainData/", base, "_rowData.rds")
@@ -23,4 +26,14 @@ TENxBrainData <- function()
     SingleCellExperiment(
         list(counts = h5array), rowData = rowData, colData = colData
     )
+}
+
+#' @export
+TENxBrainData <- function() {
+    .create_SCE_from_base("1M_neurons_filtered_gene_bc_matrices_h5")
+}
+
+#' @export
+TENxBrainData20k <- function() {
+    .create_SCE_from_base("1M_neurons_neuron20k")
 }
