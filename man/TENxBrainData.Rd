@@ -1,4 +1,5 @@
 \alias{TENxBrainData}
+\alias{TENxBrainData20k}
 \name{TENxBrainData}
 
 \title{10X Brain Data}
